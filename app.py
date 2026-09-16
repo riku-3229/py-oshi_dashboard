@@ -15,15 +15,10 @@ import certifi
 # アプリ全体の設定
 # ==================================================
 
-# app.pyが置かれているフォルダの絶対パス
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 天気予報を取得する地域ID
-# 400040は福岡県久留米
 WEATHER_CITY_ID = "400040"
 
-
-# お気に入りで使用できるジャンル
 FAVORITE_GENRES = [
     "アニメ",
     "漫画",
@@ -35,7 +30,6 @@ FAVORITE_GENRES = [
     "その他"
 ]
 
-# お気に入り一覧で使用できる並び順
 FAVORITE_SORTS = {
     "registration": "登録順",
     "title_asc": "タイトル昇順",
@@ -43,8 +37,6 @@ FAVORITE_SORTS = {
     "genre": "ジャンル順"
 }
 
-# Mac環境でHTTPS証明書エラーが発生したため、
-# certifiが持つ証明書一覧を使ってAPIへ接続する
 SSL_CONTEXT = ssl.create_default_context(
     cafile=certifi.where()
 )
@@ -57,7 +49,6 @@ class MyHandler(BaseHTTPRequestHandler):
     # ==================================================
 
     def render_template(self, filename, **kwargs):
-        """HTMLを読み込み、{{ 変数名 }}を置換してブラウザへ返す"""
 
         filepath = os.path.join(
             BASE_DIR,
@@ -73,7 +64,6 @@ class MyHandler(BaseHTTPRequestHandler):
             self.send_404()
             return
 
-        # kwargsで渡された値をHTMLのプレースホルダーへ埋め込む
         for key, value in kwargs.items():
             content = content.replace(
                 f"{{{{ {key} }}}}",
@@ -89,7 +79,6 @@ class MyHandler(BaseHTTPRequestHandler):
         self.wfile.write(content.encode("utf-8"))
 
     def send_css_file(self, filename):
-        """staticフォルダ内のCSSファイルをブラウザへ返す"""
 
         filepath = os.path.join(
             BASE_DIR,
@@ -105,8 +94,6 @@ class MyHandler(BaseHTTPRequestHandler):
             self.send_404()
             return
 
-        # HTMLではなくCSSとして解釈させるため、
-        # Content-Typeをtext/cssに設定する
         self.send_response(200)
         self.send_header(
             "Content-type",
@@ -116,8 +103,6 @@ class MyHandler(BaseHTTPRequestHandler):
         self.wfile.write(content.encode("utf-8"))
 
     def send_text_response(self, status_code, message):
-        """文字列だけのHTTPレスポンスを返す"""
-
         self.send_response(status_code)
         self.send_header(
             "Content-type",
@@ -127,17 +112,13 @@ class MyHandler(BaseHTTPRequestHandler):
         self.wfile.write(message.encode("utf-8"))
 
     def send_404(self):
-        """存在しないページへ404エラーを返す"""
-
         self.send_text_response(
             404,
             "ページが見つかりません"
         )
 
     def redirect(self, location):
-        """処理後に指定されたURLへ移動させる"""
 
-        # POST後にGETページへ移動させるため303を使用する
         self.send_response(303)
         self.send_header("Location", location)
         self.end_headers()
@@ -147,7 +128,6 @@ class MyHandler(BaseHTTPRequestHandler):
     # ==================================================
 
     def get_data_path(self, filename):
-        """dataフォルダ内にあるファイルの絶対パスを返す"""
 
         return os.path.join(
             BASE_DIR,
@@ -156,13 +136,6 @@ class MyHandler(BaseHTTPRequestHandler):
         )
 
     def load_json_file(self, filename):
-        """
-        JSONファイルを読み込み、Pythonのデータへ変換する。
-
-        読み込みに失敗した場合はNoneを返す。
-        空のリストや辞書と、読み込み失敗を区別するために
-        Noneを使用している。
-        """
 
         filepath = self.get_data_path(filename)
 
@@ -191,8 +164,6 @@ class MyHandler(BaseHTTPRequestHandler):
         return None
 
     def load_favorites(self):
-        """favorites.jsonからお気に入り一覧を読み込む"""
-
         favorites = self.load_json_file(
             "favorites.json"
         )
@@ -210,8 +181,6 @@ class MyHandler(BaseHTTPRequestHandler):
         return favorites
 
     def save_favorites(self, favorites):
-        """お気に入り一覧をfavorites.jsonへ保存する"""
-
         favorites_path = self.get_data_path(
             "favorites.json"
         )
@@ -239,8 +208,6 @@ class MyHandler(BaseHTTPRequestHandler):
             return False
 
     def load_news(self):
-        """news.jsonから更新日時とニュース一覧を読み込む"""
-
         news_data = self.load_json_file(
             "news.json"
         )
@@ -281,8 +248,6 @@ class MyHandler(BaseHTTPRequestHandler):
         }
 
     def load_quotes(self):
-        """quotes.jsonから名言一覧を読み込む"""
-
         quotes_data = self.load_json_file(
             "quotes.json"
         )
@@ -363,14 +328,11 @@ class MyHandler(BaseHTTPRequestHandler):
                 "temperature"
             ) or {}
 
-            # APIではmaxやminがnullになる場合がある。
-            # JSONのnullはPythonではNoneなので、or {}で辞書へ置き換える。
             max_data = temperature.get("max") or {}
             min_data = temperature.get("min") or {}
 
             image_data = today.get("image") or {}
 
-            # celsiusがNoneの場合は「-」を表示する
             max_temperature = (
                 max_data.get("celsius")
                 or "-"
@@ -426,7 +388,6 @@ class MyHandler(BaseHTTPRequestHandler):
                 error
             )
 
-        # 通信失敗時もトップページ自体は表示できるようにする
         return {
             "location": "地域情報なし",
             "weather": "天気情報を取得できません",
@@ -440,8 +401,6 @@ class MyHandler(BaseHTTPRequestHandler):
     # ==================================================
 
     def create_favorites_rows(self, favorites, include_actions=False):
-        """お気に入り一覧からtable用のHTMLを作る"""
-
         favorites_rows = ""
 
         for favorite in favorites:
@@ -465,13 +424,11 @@ class MyHandler(BaseHTTPRequestHandler):
                 []
             )
 
-            # tagsがリストの場合は、読点でつないで表示する
             if isinstance(tags, list):
                 tags_text = "、".join(tags)
             else:
                 tags_text = str(tags)
 
-            # タグが登録されていない場合
             if tags_text == "":
                 tags_text = "タグなし"
 
@@ -513,8 +470,6 @@ class MyHandler(BaseHTTPRequestHandler):
         return favorites_rows
 
     def create_genre_options(self, selected_genre, include_all=False):
-        """ジャンル選択欄に埋め込むoption要素を作る"""
-
         genre_options = ""
 
         if include_all:
@@ -542,8 +497,6 @@ class MyHandler(BaseHTTPRequestHandler):
         return genre_options
 
     def create_news_items(self, articles):
-        """ニュース一覧からul用のHTMLを作る"""
-
         news_items = ""
 
         for article in articles:
@@ -567,7 +520,6 @@ class MyHandler(BaseHTTPRequestHandler):
                 ""
             )
 
-            # URLがあるニュースだけタイトルをリンクにする
             if url:
                 title_html = (
                     f'<a href="{url}" '
@@ -603,8 +555,6 @@ class MyHandler(BaseHTTPRequestHandler):
         return news_items
 
     def select_random_quote(self, quotes):
-        """名言一覧からランダムに1件選ぶ"""
-
         if not quotes:
             return {
                 "text": "名言は登録されていません",
@@ -634,10 +584,6 @@ class MyHandler(BaseHTTPRequestHandler):
     # ==================================================
 
     def show_index(self):
-        """トップページを表示する"""
-
-        # トップページでは、天気・ニュース・名言だけを取得する。
-        # お気に入り全件は専用の /favorites ページで表示する。
         weather_data = self.load_weather_from_api()
 
         news_data = self.load_news()
@@ -665,8 +611,6 @@ class MyHandler(BaseHTTPRequestHandler):
         )
 
     def show_favorites(self, query_params):
-        """お気に入り一覧を絞り込み・並び替えて表示する"""
-
         selected_genre = query_params.get(
             "genre",
             [""]
@@ -677,7 +621,6 @@ class MyHandler(BaseHTTPRequestHandler):
             ["registration"]
         )[0].strip()
 
-        # 想定外の値がURLに指定された場合は初期値へ戻す
         if selected_genre not in FAVORITE_GENRES:
             selected_genre = ""
 
@@ -686,7 +629,6 @@ class MyHandler(BaseHTTPRequestHandler):
 
         favorites = self.load_favorites()
 
-        # ジャンルが指定されている場合だけ絞り込む
         if selected_genre:
             favorites = [
                 favorite
@@ -694,7 +636,6 @@ class MyHandler(BaseHTTPRequestHandler):
                 if favorite.get("genre") == selected_genre
             ]
 
-        # 登録順ではJSONの並び順をそのまま使用する
         if selected_sort == "title_asc":
             favorites.sort(
                 key=lambda favorite: str(
@@ -754,8 +695,6 @@ class MyHandler(BaseHTTPRequestHandler):
         )
 
     def show_edit(self, query_params):
-        """指定されたお気に入りの編集画面を表示する"""
-
         id_text = query_params.get(
             "id",
             [""]
@@ -819,8 +758,6 @@ class MyHandler(BaseHTTPRequestHandler):
         )
 
     def show_delete(self, query_params):
-        """指定されたお気に入りの削除確認画面を表示する"""
-
         id_text = query_params.get(
             "id",
             [""]
@@ -886,8 +823,6 @@ class MyHandler(BaseHTTPRequestHandler):
         )
 
     def show_search(self):
-        """詳細検索フォームと初期メッセージを表示する"""
-
         search_results = """
         <tr>
             <td colspan="4">
@@ -918,8 +853,6 @@ class MyHandler(BaseHTTPRequestHandler):
     # ==================================================
 
     def read_form_data(self):
-        """POSTされたフォームデータを辞書へ変換する"""
-
         content_length = int(
             self.headers.get(
                 "Content-Length",
@@ -934,14 +867,11 @@ class MyHandler(BaseHTTPRequestHandler):
         return parse_qs(request_body)
 
     def parse_tags(self, tags_text):
-        """カンマ区切りの文字列を、重複のないタグ一覧へ変換する"""
-
         tags = []
 
         for tag in tags_text.split(","):
             cleaned_tag = tag.strip()
 
-            # 空文字と、すでに追加済みのタグは保存しない
             if cleaned_tag and cleaned_tag not in tags:
                 tags.append(cleaned_tag)
 
@@ -952,10 +882,6 @@ class MyHandler(BaseHTTPRequestHandler):
     # ==================================================
 
     def reset_favorite_ids(self, favorites):
-        """お気に入りのIDを1から順番に振り直す"""
-
-        # 削除後も1、2、3……の連番にするため、
-        # リストの並び順に合わせてIDを再設定する
         for new_id, favorite in enumerate(
             favorites,
             start=1
@@ -965,8 +891,6 @@ class MyHandler(BaseHTTPRequestHandler):
         return favorites
 
     def add_favorite(self):
-        """フォームから受け取ったお気に入りを追加する"""
-
         form_data = self.read_form_data()
 
         title = form_data.get(
@@ -991,12 +915,10 @@ class MyHandler(BaseHTTPRequestHandler):
             )
             return
 
-        # 入力されたタグをカンマごとに分けてリストへ変換する
         tags = self.parse_tags(tags_text)
 
         favorites = self.load_favorites()
 
-        # 既存IDに抜けがあっても、新規追加前に連番へ戻す
         self.reset_favorite_ids(favorites)
 
         new_favorite = {
@@ -1018,8 +940,6 @@ class MyHandler(BaseHTTPRequestHandler):
         )
 
     def edit_favorite(self):
-        """指定されたお気に入りの内容を更新する"""
-
         form_data = self.read_form_data()
 
         id_text = form_data.get(
@@ -1079,7 +999,6 @@ class MyHandler(BaseHTTPRequestHandler):
 
         for favorite in favorites:
             if favorite.get("id") == edit_id:
-                # IDとリスト内の位置は変えず、内容だけ更新する
                 favorite["title"] = title
                 favorite["genre"] = genre
                 favorite["tags"] = tags
@@ -1103,8 +1022,6 @@ class MyHandler(BaseHTTPRequestHandler):
         )
 
     def search_favorites(self):
-        """タイトル・ジャンル・タグを組み合わせて検索する"""
-
         form_data = self.read_form_data()
 
         keyword = form_data.get(
@@ -1133,7 +1050,6 @@ class MyHandler(BaseHTTPRequestHandler):
         if selected_genre not in FAVORITE_GENRES:
             selected_genre = ""
 
-        # 何も指定されていない検索は実行しない
         if keyword == "" and selected_genre == "" and tag_keyword == "":
             self.send_text_response(
                 400,
@@ -1161,7 +1077,6 @@ class MyHandler(BaseHTTPRequestHandler):
             if not isinstance(tags, list):
                 tags = [str(tags)]
 
-            # タイトルが入力されている場合だけ一致方法を判定する
             title_matches = True
 
             if keyword:
@@ -1176,13 +1091,11 @@ class MyHandler(BaseHTTPRequestHandler):
                         in title.casefold()
                     )
 
-            # ジャンルが選択されている場合だけ完全一致で判定する
             genre_matches = (
                 selected_genre == ""
                 or genre == selected_genre
             )
 
-            # タグは、登録済みタグのいずれかと完全一致した場合に一致する
             tag_matches = True
 
             if tag_keyword:
@@ -1294,7 +1207,6 @@ class MyHandler(BaseHTTPRequestHandler):
             if favorite.get("id") != delete_id:
                 remaining_favorites.append(favorite)
 
-        # 削除前後で件数が同じなら、指定IDは存在しない
         if len(remaining_favorites) == len(favorites):
             self.send_text_response(
                 404,
@@ -1382,8 +1294,6 @@ class MyHandler(BaseHTTPRequestHandler):
 # ==================================================
 
 def run():
-    """ローカルHTTPサーバーを起動する"""
-
     server_address = (
         "localhost",
         8000
